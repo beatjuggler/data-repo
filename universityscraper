@@ -1,0 +1,38 @@
+# In Python 
+
+import requests
+from bs4 import BeautifulSoup, SoupStrainer
+import bs4 # import main module first
+ 
+def getRawHtml(url):
+    # Given a raw url, returns the html of the page.
+
+    start = 2040
+    count_per_page = 50
+    while start < 2100:
+        get_raw_html = requests.get(url)
+        raw_html = get_raw_html("http://univ.cc/search.php?dom=edu&key=&start=%s" % start) # you'll need to define this.
+        print raw_html
+        # we start with getting the soup for each page.
+        bs_struct = BeautifulSoup(raw_html, "html.parser")
+        # we then look for all the <li>
+        for institution in bs_struct.find_all('li'): # refer to the HTML sample below
+            # followed by finding the <a> for each of the <li>
+            links = institution.find_all('a', href=True)
+            if len(links) != 0: # make sure it found something.
+                link = links[0]
+                university_name = link.text.encode('utf-8') # some encoding issue, you can ignore this.
+                url = link['href'].encode('utf-8')
+                #scrape_university_links(url)# You can further scrape the university link here.
+                print university_name + "," + url # increment the page starting index
+        start += count_per_page
+
+if __name__ == '__main__':
+    url = raw_input('Copy and paste your URL after searching here:') 
+    getRawHtml(url)
+
+# r = requests.get(search_link)
+# raw_html = r.text
+# soup = BeautifulSoup(raw_html, 'html.parser')
+
+# results_links = soup.find_all('a', {'class': 'hdrlnk'})
