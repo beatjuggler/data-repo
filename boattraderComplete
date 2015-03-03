@@ -1,0 +1,82 @@
+##Specifically, you need an automated way of doing two things:
+##
+##Find the URL for each and every boat being listed on the entire website
+##For each boat, grab and output the following info:
+##Boat Maker/Model
+##Seller Contact Number
+##Price
+##
+##Instructions
+##
+##Write the code that will crawl and parse the boattrader website for boat ads.
+##Your code should output the relevant ads info listed above.
+##Output the first 800 ads you scraped in a CSV format.
+
+import requests
+from bs4 import BeautifulSoup, SoupStrainer
+import bs4
+import urllib2
+import csv
+
+
+
+def scraper(search_link):
+    while True:
+        r = requests.get(search_link)
+        raw_html = r.text
+        soup = BeautifulSoup(raw_html, 'html.parser')
+
+        search_page_buttons = soup.find_all('a', {'title': 'Next Page'})
+        divTag = soup.find_all('div', {'class': 'ad-title'})
+
+        last_page = True
+
+        for index, tag in enumerate(divTag):
+            aTags = tag.find_all('a')
+
+            for url in aTags:
+                url = url.get('href')
+                concat_link = "http://www.boattrader.com" + url
+                print index +1, concat_link
+
+                soup = BeautifulSoup(urllib2.urlopen(concat_link).read())
+                make = soup.find_all('span', {'class':'bd-make'})
+                model = soup.find_all('span', {'class':'bd-model'})
+##                print "Make: " + make[0].text + " Model: " + model[0].text
+
+                phone = soup.find_all('div', {'class':'contact'})
+                phone_data = phone[0].text
+##                print "Phone Number: " + phone[0].text
+
+                price = soup.find_all('span', {'class':'bd-price'})
+                price_data = price[0].text.strip()
+##                print "Price: " + price[0].text.strip() + '\n'
+
+                data = [concat_link, make, model, phone, price]
+##                print data
+
+            if index == 24:
+                for page_url in search_page_buttons:
+                    page_url = "http://www.boattrader.com" + page_url.get('href')
+                    search_link = page_url
+                last_page = False
+##                print 'Next Page of Results:' + '\n'
+        if last_page:
+            break
+
+def csv_writer(data, path):
+    with open(path, 'w') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',')
+##    csv_file = csv.writer(open('boatsoutput.csv', 'wb'))
+        for line in data:
+            writer.writerow(line)
+
+
+if __name__ == '__main__':
+    data = []
+    search_link = "http://www.boattrader.com/search-results/NewOrUsed-any/Type-any/Category-all/Zip-10001/Radius-50/Make-MASTERCRAFT/Sort-Length:DESC"
+##    search_link = raw_input('Copy and paste the URL after doing a search: ')
+    scraper(search_link)
+    path = "boatsoutput.csv"
+    csv_writer(data, path)
+    print "File Done!"
